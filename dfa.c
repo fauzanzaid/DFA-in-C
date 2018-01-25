@@ -4,7 +4,35 @@
 // Data Structures //
 /////////////////////
 
+typedef struct DfaTransition
+{
+	
+} DfaTransition;
+
 typedef struct Dfa{
+	
+	// Parameters
+
+	int *states;
+	int len_states;
+
+	char *symbols;
+	int len_symbols;
+
+	int start_state;
+
+	int *final_states;
+	int len_final_states;
+
+
+	// State handling
+	
+	int state_cur;
+	int symbol_counter;
+
+	int state_last_final_valid;
+	int state_last_final;
+	int symbol_counter_last_final;
 
 } Dfa;
 

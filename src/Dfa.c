@@ -1,4 +1,5 @@
-#include <Dfa.h>
+#include "Dfa.h"
+#include "HashTable.h"
 
 /////////////////////
 // Data Structures //

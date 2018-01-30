@@ -1,4 +1,4 @@
-#include <dfa.h>
+#include <Dfa.h>
 
 /////////////////////
 // Data Structures //

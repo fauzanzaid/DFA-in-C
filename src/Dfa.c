@@ -346,7 +346,8 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_REGEX){
-		int reti = regexec(&(tr_ptr->regex), input_symbol, 0, NULL, 0);
+		char input_string[2] = {input_symbol, '\0'};
+		int reti = regexec(&(tr_ptr->regex), input_string, 0, NULL, 0);
 		if(!reti){
 			return 1;
 		}

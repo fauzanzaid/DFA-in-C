@@ -148,7 +148,26 @@ Dfa *Dfa_new(int *states, int len_states, char *symbols, int len_symbols, int st
 }
 
 void Dfa_destroy(Dfa *dfa_ptr){
+	// Free all transitions
+	for (int i = 0; i < dfa_ptr->len_states; ++i){
+		// Cycle through all from states
+		DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->states[i])
+		DfaTransition *tr_ptr_next;
 
+		while(tr_ptr == NULL){
+			// Cycle through all to states for current from state
+			tr_ptr_next = tr_ptr->next;
+			DfaTransition_destroy(tr_ptr);
+			tr_ptr = tr_ptr_next;
+		}
+	}
+
+	// Free hashtables
+	HashTable_destroy(dfa_ptr->transition_table);
+	HashTable_destroy(dfa_ptr->state_class_table);
+
+	// Free Dfa
+	free(dfa_ptr);
 }
 
 static DfaTransition *DfaTransition_new(int from_state, int to_state){
@@ -160,7 +179,11 @@ static DfaTransition *DfaTransition_new(int from_state, int to_state){
 }
 
 static void DfaTransition_destroy(DfaTransition *tr_ptr){
-
+	// Only need to free str buffer, if allocated
+	if(tr_ptr->class != TRANSITION_CLASS_CUSTOM){
+		free(tr_ptr->str);
+	}
+	free(tr_ptr);
 }
 
 

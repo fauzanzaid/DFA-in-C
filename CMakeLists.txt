@@ -21,3 +21,6 @@ set_target_properties(Dfa
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/ext/HashTable)
 target_link_libraries(Dfa HashTable)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/ext/LinkedList)
+target_link_libraries(Dfa LinkedList)

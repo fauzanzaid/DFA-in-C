@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "Dfa.h"
 #include "HashTable.h"
@@ -13,14 +14,30 @@
 static const int STATE_CLASS_NONFINAL = 0;
 static const int STATE_CLASS_FINAL = 1;
 
+typedef enum {
+	TRANSITION_CLASS_SINGLE,
+	TRANSITION_CLASS_SINGLE_INVERT,
+	TRANSITION_CLASS_MANY,
+	TRANSITION_CLASS_MANY_INVERT,
+	TRANSITION_CLASS_CUSTOM,
+	TRANSITION_CLASS_REGEX
+} TransitionClass_type;
+
 
 /////////////////////
 // Data Structures //
 /////////////////////
 
+typedef struct DfaTransition DfaTransition;
 typedef struct DfaTransition
 {
-	
+	DfaTransition *next;
+	int from_state, to_state;
+	TransitionClass_type class;
+	union{
+		char *str;
+		int (*check_function)(char);
+	};
 } DfaTransition;
 
 typedef struct Dfa{
@@ -59,6 +76,11 @@ typedef struct Dfa{
 
 static int hash_function(void *key);
 static int key_compare(void *key1, void *key2);
+
+static DfaTransition *DfaTransition_new(int from_state, int to_state);
+static void DfaTransition_destroy(DfaTransition *tr_ptr);
+
+static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr);
 
 
 //////////////////////////////////
@@ -129,6 +151,19 @@ void Dfa_destroy(Dfa *dfa_ptr){
 
 }
 
+static DfaTransition *DfaTransition_new(int from_state, int to_state){
+	DfaTransition *tr_ptr = malloc( sizeof(DfaTransition) );
+	tr_ptr->from_state = from_state;
+	tr_ptr->to_state = to_state;
+
+	return tr_ptr;
+}
+
+static void DfaTransition_destroy(DfaTransition *tr_ptr){
+
+}
+
+
 
 // Hashing
 
@@ -147,27 +182,78 @@ static int key_compare(void *key1, void *key2){
 /////////////////////
 
 void Dfa_add_transition_single(Dfa *dfa_ptr, int from_state, int to_state, char symbol){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_SINGLE;
+	tr_ptr->str = malloc( sizeof(char) );
+	*(tr_ptr->str) = symbol;
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
 }
 
 void Dfa_add_transition_single_invert(Dfa *dfa_ptr, int from_state, int to_state, char symbol){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_SINGLE_INVERT;
+	tr_ptr->str = malloc( sizeof(char) );
+	*(tr_ptr->str) = symbol;
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
 }
 
 void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_MANY;
+	tr_ptr->str = malloc( sizeof(char)*len_symbols );
+	memcpy(tr_ptr->str, symbols, len_symbols);
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
 }
 
 void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_MANY_INVERT;
+	tr_ptr->str = malloc( sizeof(char)*len_symbols );
+	memcpy(tr_ptr->str, symbols, len_symbols);
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
 }
 
 void Dfa_add_transition_custom(Dfa *dfa_ptr, int from_state, int to_state, int (*check_function)(char)){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_CUSTOM;
+	tr_ptr->check_function = check_function;
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
 }
 
 void Dfa_add_transition_regex(Dfa *dfa_ptr, int from_state, int to_state, char *pattern){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
+	tr_ptr->class = TRANSITION_CLASS_REGEX;
+	tr_ptr->str = malloc( sizeof(char)*(strlen(pattern) + 1) );
+	strcpy(tr_ptr->str, pattern);
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
+}
+
+static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr){
+	DfaTransition *table_tr_ptr = HashTable_get(dfa_ptr->transition_table, (void *)&tr_ptr->from_state);
+
+	// No transition from this state exist
+	if(table_tr_ptr == NULL){
+		tr_ptr->next = NULL;
+		HashTable_add(dfa_ptr->transition_table, (void *)&tr_ptr->from_state, (void *)tr_ptr);
+	}
+	// Transition exists
+	else{
+		// Add transition to the top of the linked list
+		tr_ptr->next = HashTable_get(dfa_ptr->transition_table, (void *)&tr_ptr->from_state);
+		HashTable_set(dfa_ptr->transition_table, (void *)&tr_ptr->from_state, (void *)tr_ptr);
+	}
 }
 
 

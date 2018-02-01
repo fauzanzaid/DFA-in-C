@@ -1,5 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex.h>
 
 #include "Dfa.h"
 #include "HashTable.h"
@@ -35,8 +37,13 @@ typedef struct DfaTransition
 	int from_state, to_state;
 	TransitionClass_type class;
 	union{
-		char *str;
+		// char *str;
+		struct{
+			char *str;
+			int len_str;
+		};
 		int (*check_function)(char);
+		regex_t regex;
 	};
 } DfaTransition;
 
@@ -75,12 +82,17 @@ typedef struct Dfa{
 /////////////////////////////////
 
 static int hash_function(void *key);
+
 static int key_compare(void *key1, void *key2);
 
 static DfaTransition *DfaTransition_new(int from_state, int to_state);
+
 static void DfaTransition_destroy(DfaTransition *tr_ptr);
 
 static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr);
+
+// Returns 1 if tests succeeds, else 0
+static int test_transition(DfaTransition *tr_ptr, char input_symbol);
 
 
 //////////////////////////////////
@@ -179,10 +191,15 @@ static DfaTransition *DfaTransition_new(int from_state, int to_state){
 }
 
 static void DfaTransition_destroy(DfaTransition *tr_ptr){
-	// Only need to free str buffer, if allocated
-	if(tr_ptr->class != TRANSITION_CLASS_CUSTOM){
+	if(tr_ptr->class == TRANSITION_CLASS_REGEX){
+		regfree(&(tr_ptr->regex));
+	}
+
+	// No need to free function pointer
+	else if(tr_ptr->class != TRANSITION_CLASS_CUSTOM){
 		free(tr_ptr->str);
 	}
+
 	free(tr_ptr);
 }
 
@@ -210,6 +227,7 @@ void Dfa_add_transition_single(Dfa *dfa_ptr, int from_state, int to_state, char 
 	tr_ptr->class = TRANSITION_CLASS_SINGLE;
 	tr_ptr->str = malloc( sizeof(char) );
 	*(tr_ptr->str) = symbol;
+	tr_ptr->len_str = 1;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -220,6 +238,7 @@ void Dfa_add_transition_single_invert(Dfa *dfa_ptr, int from_state, int to_state
 	tr_ptr->class = TRANSITION_CLASS_SINGLE_INVERT;
 	tr_ptr->str = malloc( sizeof(char) );
 	*(tr_ptr->str) = symbol;
+	tr_ptr->len_str = 1;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -230,6 +249,7 @@ void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *s
 	tr_ptr->class = TRANSITION_CLASS_MANY;
 	tr_ptr->str = malloc( sizeof(char)*len_symbols );
 	memcpy(tr_ptr->str, symbols, len_symbols);
+	tr_ptr->len_str = len_symbols;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -240,6 +260,7 @@ void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, 
 	tr_ptr->class = TRANSITION_CLASS_MANY_INVERT;
 	tr_ptr->str = malloc( sizeof(char)*len_symbols );
 	memcpy(tr_ptr->str, symbols, len_symbols);
+	tr_ptr->len_str = len_symbols;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -257,8 +278,12 @@ void Dfa_add_transition_regex(Dfa *dfa_ptr, int from_state, int to_state, char *
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
 	tr_ptr->class = TRANSITION_CLASS_REGEX;
-	tr_ptr->str = malloc( sizeof(char)*(strlen(pattern) + 1) );
-	strcpy(tr_ptr->str, pattern);
+
+	int err = regcomp(&(tr_ptr->regex), pattern, 0);
+	if(err){
+		fprintf(stderr, "Could not compile regex \"%s\"\n", pattern);
+		exit(1);
+	}
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -284,8 +309,63 @@ static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr){
 // Run DFA //
 /////////////
 
-int Dfa_step(Dfa *dfa_ptr, char c){
+static int test_transition(DfaTransition *tr_ptr, char input_symbol){
+	if(tr_ptr->class == TRANSITION_CLASS_SINGLE){
+		if( *(tr_ptr->str) == input_symbol ) return 1;
+		else return 0;
+	}
 
+	else if(tr_ptr->class == TRANSITION_CLASS_SINGLE_INVERT){
+		if( *(tr_ptr->str) != input_symbol ) return 1;
+		else return 0;
+	}
+
+	else if(tr_ptr->class == TRANSITION_CLASS_MANY){
+		for (int i = 0; i < tr_ptr->len_str; ++i){
+			if( tr_ptr->str[i] == input_symbol ){
+				return 1;
+			}
+			return 0;
+		}
+	}
+
+	else if(tr_ptr->class == TRANSITION_CLASS_MANY_INVERT){
+		for (int i = 0; i < tr_ptr->len_str; ++i){
+			if( tr_ptr->str[i] == input_symbol ){
+				return 0;
+			}
+			return 1;
+		}
+	}
+
+	else if(tr_ptr->class == TRANSITION_CLASS_CUSTOM){
+		if( tr_ptr->check_function(input_symbol) == 0 ){
+			return 0;
+		}
+		return 1;
+	}
+
+	else if(tr_ptr->class == TRANSITION_CLASS_REGEX){
+		int reti = regexec(&(tr_ptr->regex), input_symbol, 0, NULL, 0);
+		if(!reti){
+			return 1;
+		}
+		else if(reti == REG_NOMATCH){
+			return 0;
+		}
+		else{
+			char msgbuf[100];
+			regerror(reti, &(tr_ptr->regex), msgbuf, sizeof(msgbuf));
+			fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+			exit(1);
+		}
+	}
+
+	return 0;
+}
+
+int Dfa_step(Dfa *dfa_ptr, char c){
+	DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &c);
 }
 
 int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int count){

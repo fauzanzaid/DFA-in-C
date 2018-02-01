@@ -151,7 +151,7 @@ void Dfa_destroy(Dfa *dfa_ptr){
 	// Free all transitions
 	for (int i = 0; i < dfa_ptr->len_states; ++i){
 		// Cycle through all from states
-		DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->states[i])
+		DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->states[i]);
 		DfaTransition *tr_ptr_next;
 
 		while(tr_ptr == NULL){

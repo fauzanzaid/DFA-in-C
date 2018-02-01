@@ -67,7 +67,7 @@ void Dfa_add_transition_single_invert(Dfa *dfa_ptr, int from_state, int to_state
  * @param symbols     Array of symbols to match
  * @param len_symbols Length of array
  */
-void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char symbols, int len_symbols);
+void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols);
 
 /**
  * Add a transition if the input symbol does not match any of the @p symbols
@@ -77,7 +77,7 @@ void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char sy
  * @param symbols     Array of symbols not to match
  * @param len_symbols Length of array
  */
-void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char symbols, int len_symbols);
+void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols);
 
 /**
  * Add a transition if @p check_function returns true on calling it with an

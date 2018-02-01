@@ -154,11 +154,11 @@ void Dfa_add_transition_single_invert(Dfa *dfa_ptr, int from_state, int to_state
 
 }
 
-void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char symbols, int len_symbols){
+void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols){
 
 }
 
-void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char symbols, int len_symbols){
+void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols){
 
 }
 

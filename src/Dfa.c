@@ -21,6 +21,7 @@ typedef enum {
 	TRANSITION_CLASS_SINGLE_INVERT,
 	TRANSITION_CLASS_MANY,
 	TRANSITION_CLASS_MANY_INVERT,
+	TRANSITION_CLASS_RANGE,
 	TRANSITION_CLASS_CUSTOM,
 	TRANSITION_CLASS_REGEX
 } TransitionClass_type;
@@ -31,24 +32,35 @@ typedef enum {
 /////////////////////
 
 typedef struct DfaTransition DfaTransition;
-typedef struct DfaTransition
-{
+typedef struct DfaTransition {
 	DfaTransition *next;
 	int from_state, to_state;
 	TransitionClass_type class;
 	union{
-		// char *str;
+		// For class single and single invert
+		char symbol;
+
+		// For class many and many invert
 		struct{
-			char *str;
-			int len_str;
+			char *symbols;
+			int len_symbols;
 		};
+
+		// For class range
+		struct{
+			char symbol_min;
+			char symbol_max;
+		};
+
+		// For class custom
 		int (*check_function)(char);
+
+		// For class regex
 		regex_t regex;
 	};
 } DfaTransition;
 
 typedef struct Dfa{
-	
 	// Parameters
 
 	int *states;
@@ -73,7 +85,6 @@ typedef struct Dfa{
 	int state_last_final_valid;
 	int state_last_final;
 	int symbol_counter_last_final;
-
 } Dfa;
 
 
@@ -191,13 +202,13 @@ static DfaTransition *DfaTransition_new(int from_state, int to_state){
 }
 
 static void DfaTransition_destroy(DfaTransition *tr_ptr){
-	if(tr_ptr->class == TRANSITION_CLASS_REGEX){
-		regfree(&(tr_ptr->regex));
+	if(tr_ptr->class == TRANSITION_CLASS_MANY ||
+		tr_ptr->class == TRANSITION_CLASS_MANY_INVERT){
+		free(tr_ptr->symbols);
 	}
 
-	// No need to free function pointer
-	else if(tr_ptr->class != TRANSITION_CLASS_CUSTOM){
-		free(tr_ptr->str);
+	else if(tr_ptr->class == TRANSITION_CLASS_REGEX){
+		regfree(&(tr_ptr->regex));
 	}
 
 	free(tr_ptr);
@@ -225,9 +236,7 @@ void Dfa_add_transition_single(Dfa *dfa_ptr, int from_state, int to_state, char 
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
 	tr_ptr->class = TRANSITION_CLASS_SINGLE;
-	tr_ptr->str = malloc( sizeof(char) );
-	*(tr_ptr->str) = symbol;
-	tr_ptr->len_str = 1;
+	tr_ptr->symbol = symbol;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -236,9 +245,7 @@ void Dfa_add_transition_single_invert(Dfa *dfa_ptr, int from_state, int to_state
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
 	tr_ptr->class = TRANSITION_CLASS_SINGLE_INVERT;
-	tr_ptr->str = malloc( sizeof(char) );
-	*(tr_ptr->str) = symbol;
-	tr_ptr->len_str = 1;
+	tr_ptr->symbol = symbol;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -247,9 +254,9 @@ void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *s
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
 	tr_ptr->class = TRANSITION_CLASS_MANY;
-	tr_ptr->str = malloc( sizeof(char)*len_symbols );
-	memcpy(tr_ptr->str, symbols, len_symbols);
-	tr_ptr->len_str = len_symbols;
+	tr_ptr->symbols = malloc( sizeof(char)*len_symbols );
+	memcpy(tr_ptr->symbols, symbols, len_symbols);
+	tr_ptr->len_symbols = len_symbols;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
@@ -258,12 +265,23 @@ void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, 
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
 
 	tr_ptr->class = TRANSITION_CLASS_MANY_INVERT;
-	tr_ptr->str = malloc( sizeof(char)*len_symbols );
-	memcpy(tr_ptr->str, symbols, len_symbols);
-	tr_ptr->len_str = len_symbols;
+	tr_ptr->symbols = malloc( sizeof(char)*len_symbols );
+	memcpy(tr_ptr->symbols, symbols, len_symbols);
+	tr_ptr->len_symbols = len_symbols;
 
 	add_transition_to_table(dfa_ptr, tr_ptr);
 }
+
+void Dfa_add_transition_range(Dfa *dfa_ptr, int from_state, int to_state, char symbol_min, char symbol_max){
+	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
+
+	tr_ptr->class = TRANSITION_CLASS_RANGE;
+	tr_ptr->symbol_min = symbol_min;
+	tr_ptr->symbol_max = symbol_max;
+
+	add_transition_to_table(dfa_ptr, tr_ptr);
+}
+
 
 void Dfa_add_transition_custom(Dfa *dfa_ptr, int from_state, int to_state, int (*check_function)(char)){
 	DfaTransition *tr_ptr = DfaTransition_new(from_state, to_state);
@@ -311,18 +329,18 @@ static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr){
 
 static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 	if(tr_ptr->class == TRANSITION_CLASS_SINGLE){
-		if( *(tr_ptr->str) == input_symbol ) return 1;
+		if( tr_ptr->symbol == input_symbol ) return 1;
 		else return 0;
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_SINGLE_INVERT){
-		if( *(tr_ptr->str) != input_symbol ) return 1;
+		if( tr_ptr->symbol != input_symbol ) return 1;
 		else return 0;
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_MANY){
-		for (int i = 0; i < tr_ptr->len_str; ++i){
-			if( tr_ptr->str[i] == input_symbol ){
+		for (int i = 0; i < tr_ptr->len_symbols; ++i){
+			if( tr_ptr->symbols[i] == input_symbol ){
 				return 1;
 			}
 			return 0;
@@ -330,12 +348,19 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_MANY_INVERT){
-		for (int i = 0; i < tr_ptr->len_str; ++i){
-			if( tr_ptr->str[i] == input_symbol ){
+		for (int i = 0; i < tr_ptr->len_symbols; ++i){
+			if( tr_ptr->symbols[i] == input_symbol ){
 				return 0;
 			}
 			return 1;
 		}
+	}
+
+	else if(tr_ptr->class == TRANSITION_CLASS_RANGE){
+		if(tr_ptr->symbol_min <= input_symbol && input_symbol <= tr_ptr->symbol_max){
+			return 1;
+		}
+		return 0;
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_CUSTOM){

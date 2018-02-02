@@ -80,6 +80,16 @@ void Dfa_add_transition_many(Dfa *dfa_ptr, int from_state, int to_state, char *s
 void Dfa_add_transition_many_invert(Dfa *dfa_ptr, int from_state, int to_state, char *symbols, int len_symbols);
 
 /**
+ * Add a transition if the integer value of input symbol is between @p symbol_min and @p symbol_min
+ * @param dfa_ptr     Pointer to Dfa struct
+ * @param from_state  Current state identifier
+ * @param to_state    Next state identifier
+ * @param symbol_min  Minimum value of input symbol ,inclusive
+ * @param symbol_max  Maximum value of input symbol ,inclusive
+ */
+void Dfa_add_transition_range(Dfa *dfa_ptr, int from_state, int to_state, char symbol_min, char symbol_max);
+
+/**
  * Add a transition if @p check_function returns true on calling it with an
  * input symbol
  * @param dfa_ptr        Pointer to Dfa struct

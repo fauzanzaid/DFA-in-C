@@ -115,14 +115,14 @@ void Dfa_add_transition_regex(Dfa *dfa_ptr, int from_state, int to_state, char *
 
 /**
  * Attempts one transition if possible.
- * @param  dfa_ptr Pointer to Dfa struct
- * @param  c       Input symbol
- * @return         Status
+ * @param  dfa_ptr       Pointer to Dfa struct
+ * @param  input_symbol  Input symbol
+ * @return               Status
  * @retval 0  Transition successful
  * @retval 1  No transition is possible from current state with the input symbol
  * @retval 2  Input exhausted
  */
-int Dfa_step(Dfa *dfa_ptr, char c);
+int Dfa_step(Dfa *dfa_ptr, char input_symbol);
 
 /**
  * Runs the Dfa on symbols in @p input. Running stops if the input is exhausted

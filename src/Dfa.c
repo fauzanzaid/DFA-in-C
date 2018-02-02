@@ -390,8 +390,36 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 	return 0;
 }
 
-int Dfa_step(Dfa *dfa_ptr, char c){
-	DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &c);
+int Dfa_step(Dfa *dfa_ptr, char input_symbol){
+
+	DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->state_cur);
+	while(1){
+		if(tr_ptr == NULL){
+			// No successful transition found
+			return 1;
+		}
+
+		int test = test_transition(tr_ptr, input_symbol);
+		if(test == 0){
+			// Check next available transition from current state
+			tr_ptr = tr_ptr->next;
+		}
+		else{
+			// Successful transition found
+			break;
+		}
+	}
+
+	dfa_ptr->state_cur = tr_ptr->to_state;
+	dfa_ptr->symbol_counter++;
+
+	if( *(int *)( HashTable_get(dfa_ptr->state_class_table, &(dfa_ptr->state_cur)) ) == STATE_CLASS_FINAL ){
+		dfa_ptr->state_last_final_valid = 1;
+		dfa_ptr->state_last_final = dfa_ptr->state_cur;
+		dfa_ptr->symbol_counter_last_final = dfa_ptr->symbol_counter;
+	}
+
+	return 0;
 }
 
 int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int count){

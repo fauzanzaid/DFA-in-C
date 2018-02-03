@@ -174,7 +174,7 @@ void Dfa_destroy(Dfa *dfa_ptr){
 		DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->states[i]);
 		DfaTransition *tr_ptr_next;
 
-		while(tr_ptr == NULL){
+		while(tr_ptr != NULL){
 			// Cycle through all to states for current from state
 			tr_ptr_next = tr_ptr->next;
 			DfaTransition_destroy(tr_ptr);

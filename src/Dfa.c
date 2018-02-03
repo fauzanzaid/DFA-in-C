@@ -139,7 +139,7 @@ Dfa *Dfa_new(int *states, int len_states, char *symbols, int len_symbols, int st
 
 	for (int i = 0; i < len_states; ++i){
 		// Check if state is not final
-		if(HashTable_get(state_class_table, &states[i]) != NULL){
+		if(HashTable_get(state_class_table, &states[i]) == NULL){
 			HashTable_add(state_class_table, (void *)&states[i], (void *)&DFA_STATE_CLASS_NONFINAL);
 		}
 	}

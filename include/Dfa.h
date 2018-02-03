@@ -9,8 +9,8 @@
 // Constants //
 ///////////////
 
-const int DFA_STATE_CLASS_NONFINAL = 0;
-const int DFA_STATE_CLASS_FINAL = 1;
+static const int DFA_STATE_CLASS_NONFINAL = 0;
+static const int DFA_STATE_CLASS_FINAL = 1;
 
 
 /////////////////////

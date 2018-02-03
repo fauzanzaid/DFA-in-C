@@ -5,6 +5,14 @@
 #ifndef INCLUDE_GUARD_17F57653EFD148E09EA7E032CB25872E
 #define INCLUDE_GUARD_17F57653EFD148E09EA7E032CB25872E
 
+///////////////
+// Constants //
+///////////////
+
+const int DFA_STATE_CLASS_NONFINAL = 0;
+const int DFA_STATE_CLASS_FINAL = 1;
+
+
 /////////////////////
 // Data Structures //
 /////////////////////
@@ -153,15 +161,18 @@ int Dfa_retract(Dfa *dfa_ptr);
 
 /**
  * Sets the state of the Dfa to start state
+ * Invalidates last reached final state
  * @param  dfa_ptr Pointer to Dfa struct
  */
 void Dfa_reset_state(Dfa *dfa_ptr);
 
 /**
+ * Sets the state of the Dfa to start state
+ * Invalidates last reached final state
  * Sets the symbol counter to zero
  * @param dfa_ptr Pointer to Dfa struct
  */
-void Dfa_reset_counter(Dfa *dfa_ptr);
+void Dfa_reset(Dfa *dfa_ptr);
 
 /**
  * Get infomation about current Dfa configuration

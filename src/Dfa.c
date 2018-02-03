@@ -13,9 +13,6 @@
 // Constants //
 ///////////////
 
-static const int STATE_CLASS_NONFINAL = 0;
-static const int STATE_CLASS_FINAL = 1;
-
 typedef enum {
 	TRANSITION_CLASS_SINGLE,
 	TRANSITION_CLASS_SINGLE_INVERT,
@@ -138,13 +135,13 @@ Dfa *Dfa_new(int *states, int len_states, char *symbols, int len_symbols, int st
 
 	for (int i = 0; i < len_final_states; ++i){
 		// Add all final states
-		HashTable_add(state_class_table, (void *)&final_states[i], (void *)&STATE_CLASS_FINAL);
+		HashTable_add(state_class_table, (void *)&final_states[i], (void *)&DFA_STATE_CLASS_FINAL);
 	}
 
 	for (int i = 0; i < len_states; ++i){
 		// Check if state is not final
 		if(HashTable_get(state_class_table, &states[i]) != NULL){
-			HashTable_add(state_class_table, (void *)&states[i], (void *)&STATE_CLASS_NONFINAL);
+			HashTable_add(state_class_table, (void *)&states[i], (void *)&DFA_STATE_CLASS_NONFINAL);
 		}
 	}
 
@@ -162,7 +159,7 @@ Dfa *Dfa_new(int *states, int len_states, char *symbols, int len_symbols, int st
 	dfa_ptr->symbol_counter = 0;
 	
 	// If start state is a final state...
-	if( HashTable_get(dfa_ptr->state_class_table, &start_state) == &STATE_CLASS_FINAL ){
+	if( HashTable_get(dfa_ptr->state_class_table, &start_state) == &DFA_STATE_CLASS_FINAL ){
 		dfa_ptr->state_last_final_valid = 1;
 		dfa_ptr->state_last_final = start_state;
 		dfa_ptr->symbol_counter_last_final = dfa_ptr->symbol_counter;
@@ -414,7 +411,7 @@ int Dfa_step(Dfa *dfa_ptr, char input_symbol){
 	dfa_ptr->state_cur = tr_ptr->to_state;
 	dfa_ptr->symbol_counter++;
 
-	if( *(int *)( HashTable_get(dfa_ptr->state_class_table, &(dfa_ptr->state_cur)) ) == STATE_CLASS_FINAL ){
+	if( *(int *)( HashTable_get(dfa_ptr->state_class_table, &(dfa_ptr->state_cur)) ) == DFA_STATE_CLASS_FINAL ){
 		dfa_ptr->state_last_final_valid = 1;
 		dfa_ptr->state_last_final = dfa_ptr->state_cur;
 		dfa_ptr->symbol_counter_last_final = dfa_ptr->symbol_counter;
@@ -428,13 +425,13 @@ int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
 	// global index starts from 1
 	// Get buffer index of first symbol in input whose global index is counter+1
 	int j = dfa_ptr->symbol_counter + 1 - global_index;
-	
+
 	if( j < 0 || j >= len_input ){
 		// Symbol expected does not exist in buffer
 		return -1;
 	}
 
-	for (int i = j; i < count; ++i){
+	for (int i = j; i < len_input; ++i){
 		int status = Dfa_step(dfa_ptr, input[i]);
 
 		if(status == 0)	continue;
@@ -445,17 +442,39 @@ int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
 }
 
 int Dfa_retract(Dfa *dfa_ptr){
+	if(dfa_ptr->state_last_final_valid == 0){
+		return -1;
+	}
 
+	dfa_ptr->state_cur = dfa_ptr->state_last_final;
+	dfa_ptr->symbol_counter = dfa_ptr->symbol_counter_last_final;
+	// Invalidate last final state, as it is now used
+	dfa_ptr->state_last_final_valid = 0;
+
+	return 1;
 }
 
 void Dfa_reset_state(Dfa *dfa_ptr){
-
+	dfa_ptr->state_cur = dfa_ptr->start_state;
+	dfa_ptr->state_last_final_valid = 0;
 }
 
-void Dfa_reset_counter(Dfa *dfa_ptr){
-
+void Dfa_reset(Dfa *dfa_ptr){
+	dfa_ptr->state_cur = dfa_ptr->start_state;
+	dfa_ptr->state_last_final_valid = 0;
+	dfa_ptr->symbol_counter = 0;
 }
 
 void Dfa_get_current_configuration(Dfa *dfa_ptr, int *state_ptr, int *state_type_ptr, int *counter_ptr){
+	if(state_ptr){
+		*state_ptr = dfa_ptr->state_cur;
+	}
 
+	if(state_type_ptr){
+		*state_type_ptr = *(int *)( HashTable_get(dfa_ptr->state_class_table, &(dfa_ptr->state_cur)) );
+	}
+
+	if(counter_ptr){
+		*counter_ptr = dfa_ptr->symbol_counter;
+	}
 }

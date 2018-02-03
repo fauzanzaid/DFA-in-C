@@ -13,6 +13,27 @@ static const int DFA_STATE_CLASS_NONFINAL = 0;
 static const int DFA_STATE_CLASS_FINAL = 1;
 
 
+///////////
+// Types //
+///////////
+
+typedef enum{
+	DFA_STEP_RESULT_SUCCESS,
+	DFA_STEP_RESULT_FAIL = -1
+}DFA_StepResult_type;
+
+typedef enum{
+	DFA_RUN_RESULT_MORE_INPUT,
+	DFA_RUN_RESULT_TRAP,
+	DFA_RUN_RESULT_WRONG_INDEX = -1
+}DFA_RunResult_type;
+
+typedef enum{
+	DFA_RETRACT_RESULT_SUCCESS,
+	DFA_RETRACT_RESULT_FAIL = -1
+}DFA_RetractResult_type;
+
+
 /////////////////////
 // Data Structures //
 /////////////////////
@@ -126,11 +147,11 @@ void Dfa_add_transition_regex(Dfa *dfa_ptr, int from_state, int to_state, char *
  * @param  dfa_ptr       Pointer to Dfa struct
  * @param  input_symbol  Input symbol
  * @return               Status
- * @retval 0  Transition successful
- * @retval 1  No transition is possible from current state with the input symbol
- * @retval 2  Input exhausted
+ * @retval DFA_STEP_RESULT_SUCCESS  Transition successful
+ * @retval DFA_STEP_RESULT_FAIL     No transition is possible from current state
+ * with the input symbol
  */
-int Dfa_step(Dfa *dfa_ptr, char input_symbol);
+DFA_StepResult_type Dfa_step(Dfa *dfa_ptr, char input_symbol);
 
 /**
  * Runs the Dfa on symbols in @p input. Running stops if the input is exhausted
@@ -141,23 +162,23 @@ int Dfa_step(Dfa *dfa_ptr, char input_symbol);
  * @param  global_index     Global index of the first symbol in the input array.
  * Global index is one based (starts from 1)
  * @return           Status
- * @retval 1  No transition is possible from current reached  state with the
- * symbol at index value of counter
- * @retval 2  Input exhausted
- * @retval -1 The symbol at index value of counter cannot be found in the @p
- * input
+ * @retval DFA_RUN_RESULT_TRAP        No transition is possible from current
+ * reached state with the symbol at index value of counter
+ * @retval DFA_RUN_RESULT_MORE_INPUT  Input exhausted
+ * @retval DFA_RUN_RESULT_WRONG_INDEX The symbol at index value of counter
+ * cannot be found in the @p input
  */
-int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index);
+DFA_RunResult_type Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index);
 
 /**
  * Retract Dfa to last reached final state. Sets the state and counter
  * accordingly
  * @param  dfa_ptr Pointer to Dfa struct
  * @return         Status
- * @retval 1  Retraction successful
- * @retval -1 No state available to retract to
+ * @retval DFA_RETRACT_RESULT_SUCESS  Retraction successful
+ * @retval DFA_RETRACT_RESULT_FAIL    No state available to retract to
  */
-int Dfa_retract(Dfa *dfa_ptr);
+DFA_RetractResult_type Dfa_retract(Dfa *dfa_ptr);
 
 /**
  * Sets the state of the Dfa to start state

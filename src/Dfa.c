@@ -158,13 +158,15 @@ Dfa *Dfa_new(int *states, int len_states, char *symbols, int len_symbols, int st
 	dfa_ptr->symbol_counter = 0;
 	
 	// If start state is a final state...
-	if( HashTable_get(dfa_ptr->state_class_table, &start_state) == &DFA_STATE_CLASS_FINAL ){
+	if( *(int *)( HashTable_get(dfa_ptr->state_class_table, &start_state) ) == DFA_STATE_CLASS_FINAL ){
 		dfa_ptr->state_last_final_valid = 1;
 		dfa_ptr->state_last_final = start_state;
 		dfa_ptr->symbol_counter_last_final = dfa_ptr->symbol_counter;
 	}
 	// ... is not a final state
-	dfa_ptr->state_last_final_valid = 0;
+	else{
+		dfa_ptr->state_last_final_valid = 0;
+	}
 }
 
 void Dfa_destroy(Dfa *dfa_ptr){

@@ -8,9 +8,9 @@
 
 
 
-///////////////
-// Constants //
-///////////////
+///////////
+// Types //
+///////////
 
 typedef enum {
 	TRANSITION_CLASS_SINGLE,
@@ -389,13 +389,13 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 	return 0;
 }
 
-int Dfa_step(Dfa *dfa_ptr, char input_symbol){
+DFA_StepResult_type Dfa_step(Dfa *dfa_ptr, char input_symbol){
 
 	DfaTransition *tr_ptr = HashTable_get(dfa_ptr->transition_table, &dfa_ptr->state_cur);
 	while(1){
 		if(tr_ptr == NULL){
 			// No successful transition found
-			return 1;
+			return DFA_STEP_RESULT_FAIL;
 		}
 
 		int test = test_transition(tr_ptr, input_symbol);
@@ -418,10 +418,10 @@ int Dfa_step(Dfa *dfa_ptr, char input_symbol){
 		dfa_ptr->symbol_counter_last_final = dfa_ptr->symbol_counter;
 	}
 
-	return 0;
+	return DFA_STEP_RESULT_SUCCESS;
 }
 
-int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
+DFA_RunResult_type Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
 
 	// global index starts from 1
 	// Get buffer index of first symbol in input whose global index is counter+1
@@ -429,22 +429,22 @@ int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
 
 	if( j < 0 || j >= len_input ){
 		// Symbol expected does not exist in buffer
-		return -1;
+		return DFA_RUN_RESULT_WRONG_INDEX;
 	}
 
 	for (int i = j; i < len_input; ++i){
 		int status = Dfa_step(dfa_ptr, input[i]);
 
-		if(status == 0)	continue;
-		else if(status == 1) return 1;
+		if(status == DFA_STEP_RESULT_SUCCESS)	continue;
+		else if(status == DFA_STEP_RESULT_FAIL) return DFA_RUN_RESULT_TRAP;
 	}
 
-	return 2;
+	return DFA_RUN_RESULT_MORE_INPUT;
 }
 
-int Dfa_retract(Dfa *dfa_ptr){
+DFA_RetractResult_type Dfa_retract(Dfa *dfa_ptr){
 	if(dfa_ptr->state_last_final_valid == 0){
-		return -1;
+		return DFA_RETRACT_RESULT_FAIL;
 	}
 
 	dfa_ptr->state_cur = dfa_ptr->state_last_final;
@@ -452,7 +452,7 @@ int Dfa_retract(Dfa *dfa_ptr){
 	// Invalidate last final state, as it is now used
 	dfa_ptr->state_last_final_valid = 0;
 
-	return 1;
+	return DFA_RETRACT_RESULT_SUCCESS;
 }
 
 void Dfa_reset_state(Dfa *dfa_ptr){

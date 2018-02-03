@@ -80,7 +80,8 @@ typedef struct Dfa{
 	// State handling
 	
 	int state_cur;
-	int symbol_counter;
+	int symbol_counter;	// Global index of symbol last read. If 0, no symbols
+	// have been read yet
 
 	int state_last_final_valid;
 	int state_last_final;
@@ -422,8 +423,25 @@ int Dfa_step(Dfa *dfa_ptr, char input_symbol){
 	return 0;
 }
 
-int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int count){
+int Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index){
 
+	// global index starts from 1
+	// Get buffer index of first symbol in input whose global index is counter+1
+	int j = dfa_ptr->symbol_counter + 1 - global_index;
+	
+	if( j < 0 || j >= len_input ){
+		// Symbol expected does not exist in buffer
+		return -1;
+	}
+
+	for (int i = j; i < count; ++i){
+		int status = Dfa_step(dfa_ptr, input[i]);
+
+		if(status == 0)	continue;
+		else if(status == 1) return 1;
+	}
+
+	return 2;
 }
 
 int Dfa_retract(Dfa *dfa_ptr){

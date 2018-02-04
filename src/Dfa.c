@@ -479,3 +479,40 @@ void Dfa_get_current_configuration(Dfa *dfa_ptr, int *state_ptr, int *state_type
 		*counter_ptr = dfa_ptr->symbol_counter;
 	}
 }
+
+
+///////////
+// Other //
+///////////
+
+void Dfa_get_state_lists(Dfa *dfa_ptr, int **states, int *len_states, int *start_state, int **final_states, int *len_final_states){
+	if(states){
+		*states = dfa_ptr->states;
+	}
+
+	if(len_states){
+		*len_states = dfa_ptr->len_states;
+	}
+
+	if(start_state){
+		*start_state = dfa_ptr->start_state;
+	}
+
+	if(final_states){
+		*final_states = dfa_ptr->final_states;
+	}
+
+	if(len_final_states){
+		*len_final_states = dfa_ptr->len_final_states;
+	}
+}
+
+void Dfa_get_symbol_list(Dfa *dfa_ptr, char **symbols, int *len_symbols){
+	if(symbols){
+		*symbols = dfa_ptr->symbols;
+	}
+
+	if(len_symbols){
+		*len_symbols = dfa_ptr->len_symbols;
+	}
+}

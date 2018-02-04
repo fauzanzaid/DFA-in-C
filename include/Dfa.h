@@ -208,4 +208,27 @@ void Dfa_reset(Dfa *dfa_ptr);
  */
 void Dfa_get_current_configuration(Dfa *dfa_ptr, int *state_ptr, int *state_type_ptr, int *counter_ptr);
 
+///////////
+// Other //
+///////////
+
+/**
+ * Get information about the states of Dfa
+ * @param dfa_ptr          Pointer to Dfa struct
+ * @param states           Pointer to an int pointer
+ * @param len_states       Pointer to an int
+ * @param start_state      Pointer to an int
+ * @param final_states     Pointer to an int pointer
+ * @param len_final_states Pointer to an int
+ */
+void Dfa_get_state_lists(Dfa *dfa_ptr, int **states, int *len_states, int *start_state, int **final_states, int *len_final_states);
+
+/**
+ * Get information about the accpted symbols of the Dfa
+ * @param dfa_ptr     Pointer to Dfa struct
+ * @param symbols     Pointer to a char pointer
+ * @param len_symbols Pointer to an int
+ */
+void Dfa_get_symbol_list(Dfa *dfa_ptr, char **symbols, int *len_symbols);
+
 #endif

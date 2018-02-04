@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project( Dfa VERSION 0.1.1 )
 
-
-
-
-
-
 add_library(Dfa STATIC src/Dfa.c)
 
 target_include_directories( Dfa PUBLIC ${PROJECT_SOURCE_DIR}/include )
@@ -19,8 +14,12 @@ set_target_properties(Dfa
 	RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 )
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/ext/HashTable)
+if(NOT TARGET HashTable)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/ext/HashTable ${CMAKE_SOURCE_DIR}/ext/HashTable/build/bin)
+endif(NOT TARGET HashTable)
 target_link_libraries(Dfa HashTable)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/ext/LinkedList)
+if(NOT TARGET LinkedList)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/ext/LinkedList ${CMAKE_SOURCE_DIR}/ext/LinkedList/build/bin)
+endif(NOT TARGET LinkedList)
 target_link_libraries(Dfa LinkedList)

@@ -342,8 +342,8 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 			if( tr_ptr->symbols[i] == input_symbol ){
 				return 1;
 			}
-			return 0;
 		}
+		return 0;
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_MANY_INVERT){
@@ -351,8 +351,8 @@ static int test_transition(DfaTransition *tr_ptr, char input_symbol){
 			if( tr_ptr->symbols[i] == input_symbol ){
 				return 0;
 			}
-			return 1;
 		}
+		return 1;
 	}
 
 	else if(tr_ptr->class == TRANSITION_CLASS_RANGE){

@@ -395,6 +395,7 @@ DFA_StepResult_type Dfa_step(Dfa *dfa_ptr, char input_symbol){
 	while(1){
 		if(tr_ptr == NULL){
 			// No successful transition found
+			// printf("Dfa_step : %d (%x) Fail\n", dfa_ptr->state_cur, (int)input_symbol);
 			return DFA_STEP_RESULT_FAIL;
 		}
 
@@ -408,6 +409,8 @@ DFA_StepResult_type Dfa_step(Dfa *dfa_ptr, char input_symbol){
 			break;
 		}
 	}
+
+	// printf("Dfa_step : %d (%x) %d\n", dfa_ptr->state_cur, (int)input_symbol, tr_ptr->to_state);
 
 	dfa_ptr->state_cur = tr_ptr->to_state;
 	dfa_ptr->symbol_counter++;

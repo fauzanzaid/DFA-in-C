@@ -308,16 +308,31 @@ void Dfa_add_transition_regex(Dfa *dfa_ptr, int from_state, int to_state, char *
 static void add_transition_to_table(Dfa *dfa_ptr, DfaTransition *tr_ptr){
 	DfaTransition *table_tr_ptr = HashTable_get(dfa_ptr->transition_table, (void *)&tr_ptr->from_state);
 
+	// Find the state in the array to use as key, as it will persist after the
+	// transition is destoryed.
+	int *from_state_ptr = NULL;
+	for (int i = 0; i < dfa_ptr->len_states; ++i){
+		if(tr_ptr->from_state == dfa_ptr->states[i]){
+			from_state_ptr = &(dfa_ptr->states[i]);
+			break;
+		}
+	}
+
+	if(from_state_ptr == NULL){
+		// Unrecoverable condition
+		return;
+	}
+
 	// No transition from this state exist
 	if(table_tr_ptr == NULL){
 		tr_ptr->next = NULL;
-		HashTable_add(dfa_ptr->transition_table, (void *)&tr_ptr->from_state, (void *)tr_ptr);
+		HashTable_add(dfa_ptr->transition_table, (void *)from_state_ptr, (void *)tr_ptr);
 	}
 	// Transition exists
 	else{
 		// Add transition to the top of the linked list
-		tr_ptr->next = HashTable_get(dfa_ptr->transition_table, (void *)&tr_ptr->from_state);
-		HashTable_set(dfa_ptr->transition_table, (void *)&tr_ptr->from_state, (void *)tr_ptr);
+		tr_ptr->next = HashTable_get(dfa_ptr->transition_table, (void *)from_state_ptr);
+		HashTable_set(dfa_ptr->transition_table, (void *)from_state_ptr, (void *)tr_ptr);
 	}
 }
 

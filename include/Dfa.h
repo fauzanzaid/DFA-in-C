@@ -174,6 +174,14 @@ DFA_StepResult_type Dfa_step(Dfa *dfa_ptr, char input_symbol);
 DFA_RunResult_type Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_index);
 
 /**
+ * Skip a character. This function can be called in case step fails, or run
+ * traps. This function increases the count of internal counter by one, which
+ * discards the index of the character which caused the failure.
+ * @param dfa_ptr Pointer to Dfa struct
+ */
+void Dfa_skip(Dfa *dfa_ptr);
+
+/**
  * Retract Dfa to last reached final state. Sets the state and counter
  * accordingly
  * @param  dfa_ptr Pointer to Dfa struct

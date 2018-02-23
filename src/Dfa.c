@@ -460,6 +460,10 @@ DFA_RunResult_type Dfa_run(Dfa *dfa_ptr, char* input, int len_input, int global_
 	return DFA_RUN_RESULT_MORE_INPUT;
 }
 
+void Dfa_skip(Dfa *dfa_ptr){
+	dfa_ptr->symbol_counter++;
+}
+
 DFA_RetractResult_type Dfa_retract(Dfa *dfa_ptr){
 	if(dfa_ptr->state_last_final_valid == 0){
 		return DFA_RETRACT_RESULT_FAIL;
